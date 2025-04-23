@@ -1,0 +1,9 @@
+[package]
+name = "tetanus_shares"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4.5.37", features = ["derive"] }
+ldap3 = { version = "0.11.5", features = ["gssapi"] }
+tokio = { version = "1.44.2", features = ["rt-multi-thread"] }
