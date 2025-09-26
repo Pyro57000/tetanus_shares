@@ -17,7 +17,10 @@ struct Args{
     outfile: Option<PathBuf>,
 
     #[arg(short, long, help = "number of threads to use, default to 10.")]
-    threads: Option<usize>
+    threads: Option<usize>,
+
+    #[arg(short, long, help = "specific targets. should be comma separated.")]
+    targets: Option<String>,
 }
 
 struct ShareFinder{
@@ -74,10 +77,53 @@ async fn find_shares(task: ShareFinder, mut rx: Receiver<String>){
 
 #[tokio::main]
 async fn main(){
+    print!{"
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⡿⠋⠁⠙⠿⠿⠟⠀⠀⠈⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣷⡄⠀⠀⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⡿⠁⠀⢀⣴⣾⣷⣦⡀⠀⠈⠉⠉⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⡇⠀⠀⠀⠀⢸⣿⣿⣿⣿⡇⠀⠀⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣧⣤⣤⣄⠀⠈⠛⠿⠿⠋⠀⠀⣰⡿⠿⣿⣿⣿⣿⠁⠀⠀⢸⣿⣿⣿⣿⠿⣿
+⣿⣿⣿⣿⣿⠁⠀⠀⢀⣀⡀⠀⠀⠈⠀⠀⠘⣿⠿⠿⠀⠀⠀⠸⠿⢿⣿⠃⠀⣿
+⣿⣿⣿⣿⣇⣀⠀⢀⣿⣿⣿⣄⣀⣴⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿
+⣿⣿⣿⣿⣿⣿⣿⣾⡿⠋⠛⠿⡿⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣅⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣀⣀⠀⠀⠀⠀⠀⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠁⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⣿⣿⣷⡄⠀⠀⠀⣿
+⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⣿
+⣿⣿⣿⣿⣿⣿⣧⣤⣤⣄⠀⠀⠀⠀⠀⠀⠀⠀⢻⣿⣿⣿⣿⣿⣿⠟⠀⠀⠀⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⣤⣤⣤⣤⣤⣤⣤⣤⣽⣿⣿⣿⣿⣭⣤⣤⣤⣤⣿
+
+                                                                                        
+ (  (         (                         )                                               
+ )\\))(   '  ( )\\          )     (    ( /(                                               
+((_)()\\ )  ))((_)(  (    (     ))\\   )\\())(                                             
+_(())\\_)()/((_)  )\\ )\\   )\\  '/((_) (_))/ )\\                                            
+\\ \\((_)/ (_))| |((_|(_)_((_))(_))   | |_ ((_)                                           
+ \\ \\/\\/ // -_) / _/ _ \\ '  \\() -_)  |  _/ _ \\                                           
+  \\_/\\_/ \\___|_\\__\\___/_|_|_|\\___|   \\__\\___/                                           
+  *   )        )                             )                                          
+` )  /(  (  ( /(   )         (            ( /(    ) (     (        (    )  (            
+ ( )(_))))\\ )\\()| /(  (     ))\\ (      (  )\\())( /( )(   ))\\(     ))\\( /( ))\\           
+(_(_())/((_|_))/)(_)) )\\ ) /((_))\\     )\\((_)\\ )(_)|()\\ /((_)\\   /((_)\\())((_)          
+|_   _(_)) | |_((_)_ _(_/((_))(((_)   ((_) |(_|(_)_ ((_|_))((_) (_))((_)(_))            
+  | | / -_)|  _/ _` | ' \\)) || (_-<   (_-< ' \\/ _` | '_/ -_|_-<_/ -_) \\ / -_)           
+  |_| \\___| \\__\\__,_|_||_| \\_,_/__/___/__/_||_\\__,_|_| \\___/__(_)___/_\\_\\___|(          
+   (             )   )           |___(_|         )       )    )\\ )         ) )\\ )    )  
+   )\\      (  ( /(( /(     (       ( )\\   (   ( /( ||_( /(   (()/((     ( /((()/( ( /(  
+((((_)(   ))\\ )\\())\\()) (  )(      )((_) ))\\  )\\()|_-<)\\())   /(_))\\ )  )\\())/(_)))\\()) 
+ )\\ _ )\\ /((_|_))((_)\\  )\\(()\\ _  ((_)_ /((_)((_)\\/ _(_))/   (_))(()/( ((_)\\(_)) ((_)\\  
+ (_)_\\(_|_))(| |_| |(_)((_)((_|_)  | _ |_))(| | (_)||| |_    | _ \\)(_)) | (_) _ \\/  (_) 
+  / _ \\ | || |  _| ' \\/ _ \\ '_|_   | _ \\ || |_  _|   |  _|   |  _/ || |_  _||   / () |  
+ /_/ \\_\\ \\_,_|\\__|_||_\\___/_| (_)  |___/\\_,_| |_|     \\__|___|_|  \\_, | |_| |_|_\\\\__/   
+                                                        |_____|   |__/                  
+ 
+    "}
     let args = Args::parse();
     let mut outfile = PathBuf::new();
     let mut threads = 10;
     let mut save = false;
+    let mut computers = Vec::new();
     if args.outfile.is_some(){
         outfile = args.outfile.unwrap();
         save = true;
@@ -85,41 +131,56 @@ async fn main(){
     if args.threads.is_some(){
         threads = args.threads.unwrap();
     }
-    println!("finding computers...");
-    let command_string = String::from("net group \"domain computers\" /domain");
-    let mut temp_file = fs::File::create("./temp.bat").unwrap();
-    write!(temp_file, "{}", command_string).unwrap();
-    let computer_res = Command::new(".\\temp.bat").output();
-    let mut error_string = String::new();
-    let mut success_string = String::new();
-    fs::remove_file("./temp.bat").unwrap();
-    if computer_res.is_ok(){
-        let output = computer_res.unwrap();
-        if output.stdout.len() > 0{
-            success_string = String::from_utf8_lossy(&output.stdout).to_string();
+    if args.targets.is_some(){
+        println!("gathering the targets you gave me.");
+        let targets = args.targets.unwrap();
+        if targets.contains(","){
+            let split_targets: Vec<&str> = targets.split(",").collect();
+            for target in split_targets{
+                computers.push(target.to_string());
+            }
         }
-        else if output.stderr.len() > 0{
-            error_string = String::from_utf8_lossy(&output.stderr).to_string();
+        else{
+            computers.push(targets);
         }
     }
     else{
-        error_string = computer_res.err().unwrap().to_string();
-    }
-    if error_string.len() > 0{
-        eprintln!("{}", "error getting computers!".red());
-        eprintln!("{}", error_string.red());
-        exit(1);
-    }
-    let mut computers = Vec::new();
-    if success_string.len() > 0{
-        for line in success_string.lines(){
-            if line.contains("$"){
-                let words:Vec<&str> = line.split_whitespace().collect();
-                for word in words{
-                    let mut computer_name = word.to_string();
-                    computer_name.pop();
-                    println!("{} {}", "found".green(), computer_name.green());
-                    computers.push(computer_name);
+        println!("no targets given, proceeding with domain computer enumeration...");
+        println!("finding computers...");
+        let command_string = String::from("net group \"domain computers\" /domain");
+        let mut temp_file = fs::File::create("./temp.bat").unwrap();
+        write!(temp_file, "{}", command_string).unwrap();
+        let computer_res = Command::new(".\\temp.bat").output();
+        let mut error_string = String::new();
+        let mut success_string = String::new();
+        fs::remove_file("./temp.bat").unwrap();
+        if computer_res.is_ok(){
+            let output = computer_res.unwrap();
+            if output.stdout.len() > 0{
+                success_string = String::from_utf8_lossy(&output.stdout).to_string();
+            }
+            else if output.stderr.len() > 0{
+                error_string = String::from_utf8_lossy(&output.stderr).to_string();
+            }
+        }
+        else{
+            error_string = computer_res.err().unwrap().to_string();
+        }
+        if error_string.len() > 0{
+            eprintln!("{}", "error getting computers!".red());
+            eprintln!("{}", error_string.red());
+            exit(1);
+        }
+        if success_string.len() > 0{
+            for line in success_string.lines(){
+                if line.contains("$"){
+                    let words:Vec<&str> = line.split_whitespace().collect();
+                    for word in words{
+                        let mut computer_name = word.to_string();
+                        computer_name.pop();
+                        println!("{} {}", "found".green(), computer_name.green());
+                        computers.push(computer_name);
+                    }
                 }
             }
         }
